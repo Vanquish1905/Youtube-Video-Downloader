@@ -218,12 +218,10 @@ Built with:
 
 ---
 
-## License
-
-MIT License - do whatever you want with it.
-
----
 
 ## Contributing
 
 Found a bug or want to add a feature? PRs are welcome. Just keep the code clean and test your changes before submitting.
+
+
+This Readme was made using Gemini 3 (if somethings dont sound human)
