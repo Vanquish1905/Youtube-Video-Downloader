@@ -1,227 +1,137 @@
 # Vanquish Downloader
 
-A powerful YouTube video downloader with a modern interface, built to handle everything from quick MP3 rips to full 8K video downloads.
+A YouTube downloader with a clean desktop interface. Paste a link (or a whole playlist), pick a quality, and download anything from a quick MP3 to full 4K/8K video.
+
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
 
 ---
 
 ## Quick Start
 
-### Option 1: Download the Pre-Built Executable (Recommended)
+### Option 1: Pre-built executable (Windows)
 
-Head over to the [Releases](../../releases) section and grab **v2** - it's a single `.exe` file that runs out of the box. No Python, no dependencies, no headaches.
+Grab `VanquishDownloader.exe` from the [Releases](../../releases) page, put it anywhere and run it. FFmpeg is bundled.
 
-1. Download `VanquishDownloader.exe` from the v2 release
-2. Place it anywhere you like
-3. Double-click and start downloading
+For full quality you also need **Deno** (see below). Without it YouTube often only serves low resolutions.
 
-That's it. The app bundles everything it needs, including FFmpeg.
-
-### Option 2: Run from Source
-
-If you prefer running the Python script directly or want to tinker with the code:
+### Option 2: Run from source
 
 ```bash
-git clone https://github.com/yourusername/vanquish-downloader.git
-cd vanquish-downloader
-
+git clone https://github.com/vanquish1905/youtube-video-downloader.git
+cd youtube-video-downloader
 pip install -r requirements.txt
-
 python main.py
 ```
 
-**Requirements:**
+**You need:**
 
-- Python 3.8 or higher
-- FFmpeg installed and available in your system PATH
+- Python 3.9 or newer (with Tkinter)
+- **FFmpeg** to merge HD video with audio, and for MP3/M4A
+- **Deno** (or Node.js 20+) so yt-dlp can unlock YouTube's full format list
 
-To install FFmpeg:
+| Tool   | Windows                     | macOS                 | Linux                                      |
+| ------ | --------------------------- | --------------------- | ------------------------------------------ |
+| FFmpeg | `winget install ffmpeg`     | `brew install ffmpeg` | `sudo apt install ffmpeg`                  |
+| Deno   | `winget install DenoLand.Deno` | `brew install deno` | `curl -fsSL https://deno.land/install.sh \| sh` |
 
-- **Windows:** Download from [ffmpeg.org](https://ffmpeg.org/download.html) and add to PATH, or use `winget install ffmpeg`
-- **macOS:** `brew install ffmpeg`
-- **Linux:** `sudo apt install ffmpeg` or equivalent for your distro
+The app also finds `ffmpeg` and `deno` if you put them next to `main.py` / the `.exe`, or in an `ffmpeg` folder beside it.
 
-### Option 3: Build Your Own Executable
-
-Want to compile it yourself? Here's the PyInstaller command:
+### Option 3: Build the executable yourself
 
 ```bash
 pip install pyinstaller
-
-pyinstaller --onefile --windowed --icon=icon.ico --name="VanquishDownloader" --add-data="ffmpeg;ffmpeg" --hidden-import=customtkinter --hidden-import=yt_dlp --collect-all customtkinter main.py
+pyinstaller --onefile --windowed --icon=icon.ico --name=VanquishDownloader --add-data="icon.ico;." --add-data="ffmpeg;ffmpeg" --collect-all customtkinter --collect-all yt_dlp_ejs main.py
 ```
 
-Your executable will appear in the `dist` folder.
-
-Note: On macOS/Linux, replace the `;` with `:` in the `--add-data` flag.
-
----
-
-## How It Works
-
-### The Download Process
-
-When you paste a YouTube URL and hit download, here's what happens under the hood:
-
-1. **URL Validation** - The app checks if your link is a valid YouTube URL (supports youtube.com, youtu.be, and various regional domains)
-
-2. **Metadata Extraction** - yt-dlp reaches out to YouTube and pulls back video information: title, available formats, resolutions, duration, thumbnail, etc.
-
-3. **Format Selection** - Based on your chosen quality (360p to 8K) and format (MP4, MKV, MP3), the app figures out which streams to grab. For video downloads, this usually means fetching separate video and audio streams since YouTube stores them separately at higher qualities.
-
-4. **Parallel Downloading** - Instead of downloading one chunk at a time, the app splits the work across 8 concurrent connections. This dramatically speeds things up, especially on fast internet connections.
-
-5. **Stream Merging** - Once both streams are downloaded, FFmpeg kicks in to merge the video and audio into a single file. For MP3 downloads, FFmpeg handles the audio extraction and conversion.
-
-6. **File Delivery** - The final file lands in your chosen download folder, named after the video title.
-
-### Bypassing YouTube's Detection
-
-YouTube doesn't particularly like third-party downloaders and has various systems in place to block or throttle them. Here's how Vanquish gets around that:
-
-**Client Impersonation**
-
-The app doesn't just send requests as a generic downloader. It cycles through multiple "client" identities that YouTube recognizes as legitimate:
-
-- `web` - Standard browser client
-- `android` - Android app client
-- `ios` - iOS app client
-- `tv_embedded` - Smart TV embedded player
-- `mweb` - Mobile web browser
-
-Each client type has different capabilities and rate limits. When one gets throttled, the app can fall back to others.
-
-**Browser Fingerprinting**
-
-Every request includes headers that mimic a real browser - User-Agent strings, accept headers, cookies handling, and other fingerprint data that YouTube checks. The app uses the `extractor_args` to specify which client to impersonate.
-
-**Chunked Downloads with Retries**
-
-Instead of trying to grab the whole file at once (which YouTube monitors and throttles), downloads happen in 10MB chunks. If a chunk fails or gets rate-limited, the app backs off and retries up to 10 times with exponential delays.
-
-**Fragment-Based Downloading**
-
-For adaptive streams (DASH), videos are split into small fragments. The app downloads 8 fragments simultaneously, staying under YouTube's radar while maximizing speed. This parallel approach also means partial failures don't kill the whole download.
-
-**No Authentication Required**
-
-The app works without logging into a Google account, which means YouTube can't tie downloads to a user profile and apply stricter limits. Public videos are fully accessible this way.
-
----
-
-## v1 vs v2 Comparison
-
-### What v1 Had
-
-The original version was functional but basic:
-
-- Simple tkinter interface with a single input field
-- One download at a time
-- Basic quality selection (best available only)
-- Minimal error feedback
-- No progress indication beyond "downloading..."
-- Fixed download location
-- No format conversion options
-
-### What v2 Brings
-
-This rewrite is essentially a new application:
-
-| Feature                  | v1               | v2                                        |
-| ------------------------ | ---------------- | ----------------------------------------- |
-| **Interface**            | Basic tkinter    | Modern CustomTkinter with dark theme      |
-| **Themes**               | None             | 6 color schemes                           |
-| **Resolution Options**   | Best only        | 360p, 480p, 720p, 1080p, 1440p, 4K, 8K    |
-| **Output Formats**       | MP4 only         | MP4, MKV, MP3                             |
-| **Concurrent Downloads** | 1                | Up to 5 simultaneous                      |
-| **Batch Downloads**      | No               | Yes (paste multiple URLs)                 |
-| **Download Queue**       | No               | Full queue management with pause/cancel   |
-| **Progress Tracking**    | Basic            | Per-download progress bars with speed/ETA |
-| **Download Location**    | Fixed            | User selectable                           |
-| **Network Diagnostics**  | None             | Built-in connectivity testing             |
-| **Error Handling**       | Basic exceptions | Detailed logging with timestamps          |
-| **Speed Optimization**   | Default          | 8 concurrent fragments, optimized buffers |
-| **YouTube Bypass**       | Basic            | Multi-client rotation, advanced headers   |
-
-### Performance Difference
-
-In real-world testing, v2 typically downloads 3-5x faster than v1 on the same connection. The combination of concurrent fragment downloading, larger buffers, and client rotation means you're not waiting around for YouTube's throttling to kick in.
-
-### Why the Complete Rewrite?
-
-v1 was written to solve a simple problem: download a video. But as YouTube's systems evolved and users wanted more features, patching the old codebase became unsustainable. v2 was built from scratch with extensibility in mind - adding new features, formats, or bypass methods is now straightforward.
+Put `ffmpeg.exe` in an `ffmpeg` folder before building. To ship Deno with it, add `--add-binary="deno.exe;."`.
+On macOS/Linux use `:` instead of `;` in `--add-data` and `--add-binary`. The result is in `dist/`.
 
 ---
 
 ## Using the App
 
-### Main Download Tab
+### Downloads
 
-1. Paste one or more YouTube URLs (one per line for batch downloads)
-2. Select your desired quality from the dropdown
-3. Choose output format (MP4, MKV, or MP3)
-4. Click "Add to Queue" or "Download Now"
+1. Paste one or more links (one per line). Videos, Shorts, `youtu.be` links and playlists all work.
+2. Pick a **Format**: MP4, MKV, MP3 or M4A.
+3. Pick a **Quality**: Best, 8K, 4K, 1440p, 1080p, 720p, 480p or 360p.
+4. Click **Download** to start right away, or **Add to Queue** to start later with **Start All**.
 
-### Queue Tab
+Each item shows the highest resolution the video offers, live speed, size and time left, and after it finishes the resolution you actually got. Items can be paused, resumed, retried, opened in your file manager or removed.
 
-View all pending and active downloads. Each item shows:
+If a video does not exist in the quality you chose, you get the closest one available, never a random low one.
 
-- Video title and thumbnail
-- Current progress with speed and ETA
-- Individual pause/cancel controls
+### Settings
 
-### Settings Tab
+Everything here is saved automatically.
 
-- **Download Location** - Click browse to choose where files are saved
-- **Concurrent Downloads** - Slider from 1-5 simultaneous downloads
-- **Theme** - Pick from 6 color schemes
+- **Download Location**: type a path or use Browse.
+- **Theme** and **Language**: 6 themes, 10 languages.
+- **Concurrent downloads**: 1 to 8 at a time. The rest wait in the queue.
+- **Limit speed**: cap the download speed in MB/s.
+- **Playlists**: turn a playlist link into one item per video.
+- **Metadata**: embed title and chapters, plus cover art for audio files.
+- **Browser cookies**: use your browser's YouTube login. Only needed for age restricted videos or when YouTube asks you to sign in.
 
-### Diagnostics Tab
+### Diagnostics
 
-Having issues? The diagnostics panel helps troubleshoot:
+Checks your internet connection, DNS, whether YouTube is reachable, and whether FFmpeg and a JavaScript runtime were found. The full app log shows here as well and can be copied.
 
-- Tests internet connectivity
-- Checks DNS resolution
-- Verifies YouTube is reachable
-- Shows detailed logs with timestamps
+---
+
+## How It Works
+
+1. **Link check**: pasted text is split into lines, real YouTube links are kept and duplicates are dropped.
+2. **Info**: as soon as a link is added, yt-dlp reads the title, length and available formats in the background. Playlists are expanded here.
+3. **Format choice**: YouTube stores HD video and audio as separate streams. The app sorts them by resolution (up to your limit), then frame rate, then codec. For MP4 it prefers H.264 + AAC at the same resolution so the file plays everywhere. 4K still uses VP9/AV1 because YouTube has no H.264 at that size.
+4. **Download**: the info read in step 2 is reused, so nothing is fetched twice. Large files are downloaded in 10 MB chunks with automatic retries.
+5. **Merge**: FFmpeg joins video and audio into one file without re-encoding, so it is quick and lossless. MP3 is converted from the best audio stream. M4A is copied as is.
+
+### Why quality used to be low
+
+Older versions told yt-dlp to use YouTube's `android` and `web` clients. YouTube now hides almost every format on those clients unless extra tokens are provided, which left only the 360p combined stream. Version 3 lets yt-dlp choose the clients and gives it a JavaScript runtime to solve YouTube's player challenge. That brings back the full range of formats up to 8K.
+
+If you still only get low quality:
+
+- Check the sidebar. **FFmpeg** and **JS runtime** should both say *ready*.
+- Update yt-dlp: `pip install -U "yt-dlp[default]"`. YouTube changes often.
 
 ---
 
 ## Troubleshooting
 
-**"FFmpeg not found"**
+**"FFmpeg: missing"**
+Install FFmpeg (see the table above) or put `ffmpeg.exe` next to the app. Without it HD downloads are limited to 360p and MP3/M4A will not work.
 
-The app needs FFmpeg for merging streams and format conversion. Either install it system-wide or place the ffmpeg executable in the same folder as the app.
+**"JS runtime: missing"**
+Install Deno and restart the app.
 
-**Downloads are slow**
+**"Sign in to confirm you're not a bot" / age restricted videos**
+Set **Browser cookies** in Settings to the browser where you are logged into YouTube. Close that browser first if it is Chrome or Edge.
 
-Try the diagnostics tab to check your connection. If YouTube is throttling, the app will automatically retry with different client identities, but extremely slow speeds usually indicate network issues on your end.
+**Video unavailable**
+Private, removed or region locked videos can not be downloaded.
 
-**Video unavailable errors**
-
-Some videos are region-locked, age-restricted, or private. The app can't bypass content restrictions that require authentication.
-
-**App won't start (Windows)**
-
-Make sure you're not running from a restricted folder. Try placing the app in your Documents or Downloads folder.
-
----
-
-## Technical Details
-
-Built with:
-
-- **Python 3.8+** - Core language
-- **CustomTkinter** - Modern UI framework
-- **yt-dlp** - YouTube extraction engine
-- **FFmpeg** - Media processing
-- **Threading** - Concurrent download management
+**Slow downloads**
+Run Diagnostics. Lower the concurrent downloads if your connection is shared, and make sure the speed limit is off.
 
 ---
 
+## Built With
+
+- [Python](https://www.python.org/)
+- [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter)
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+- [FFmpeg](https://ffmpeg.org/)
+
+## Project Layout
+
+| File                 | What it does                                          |
+| -------------------- | ----------------------------------------------------- |
+| `main.py`            | The interface and download queue                      |
+| `downloader_core.py` | Format selection, yt-dlp options, settings, URL check |
+| `CHANGELOG.md`       | Version history                                       |
 
 ## Contributing
 
-Found a bug or want to add a feature? PRs are welcome. Just keep the code clean and test your changes before submitting.
-
-
-This Readme was made using Gemini 3 (if somethings dont sound human)
+Found a bug or want a feature? Open an issue or a pull request.
