@@ -232,7 +232,7 @@ class VanquishDownloader(ctk.CTk):
         self.title(core.APP_NAME)
         self.geometry("1180x780")
         self.minsize(960, 640)
-        icon = core.resource_path("icon.ico")
+        icon = core.resource_path("app.ico") or core.resource_path("icon.ico")
         if icon and core.IS_WINDOWS:
             try:
                 self.iconbitmap(icon)
@@ -1049,5 +1049,12 @@ class VanquishDownloader(ctk.CTk):
 
 
 if __name__ == "__main__":
+    if core.IS_WINDOWS:
+        # Own taskbar entry, so Windows shows the app icon instead of Python's.
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Vanquish.Downloader")
+        except Exception:
+            pass
     app = VanquishDownloader()
     app.mainloop()

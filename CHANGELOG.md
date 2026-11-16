@@ -40,6 +40,12 @@
 - Progress updates are throttled so many parallel downloads do not slow the UI down.
 - FFmpeg version lookup no longer blocks startup.
 
+### Release build
+- The Windows exe now bundles Deno as well as FFmpeg and FFprobe, so full quality works with nothing else installed.
+- The exe uses the app icon, with every size Windows needs (16 to 256 px). The icon also shows on the window and taskbar.
+- New portable zip that starts faster than the single exe.
+- GitHub Actions workflow builds both and publishes them as a release.
+
 ### Changed
 - Download logic moved into `downloader_core.py`; `main.py` is only the interface.
 - Removed the hardcoded old Chrome user agent.

@@ -10,9 +10,11 @@ See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
 
 ### Option 1: Pre-built executable (Windows)
 
-Grab `VanquishDownloader.exe` from the [Releases](../../releases) page, put it anywhere and run it. FFmpeg is bundled.
+Grab `VanquishDownloader.exe` from the [Releases](../../releases) page, put it anywhere and run it. FFmpeg and Deno are built in, so there is nothing else to install.
 
-For full quality you also need **Deno** (see below). Without it YouTube often only serves low resolutions.
+There is also `VanquishDownloader-portable.zip`, the same app as a folder. It starts faster because the single exe has to unpack itself on every launch. Extract it and run `VanquishDownloader.exe` inside.
+
+Windows may show a SmartScreen warning because the exe is not code-signed. Click **More info** then **Run anyway**.
 
 ### Option 2: Run from source
 
@@ -38,13 +40,16 @@ The app also finds `ffmpeg` and `deno` if you put them next to `main.py` / the `
 
 ### Option 3: Build the executable yourself
 
+The easiest way is GitHub Actions: the **Build Windows exe** workflow (`.github/workflows/build-windows.yml`) downloads FFmpeg and Deno, builds the exe with the app icon, and publishes it as a release. Run it from the **Actions** tab, or push a tag like `v3.0.1`.
+
+To build locally on Windows, put `deno.exe` next to `main.py` and `ffmpeg.exe` + `ffprobe.exe` in an `ffmpeg` folder, then:
+
 ```bash
-pip install pyinstaller
-pyinstaller --onefile --windowed --icon=icon.ico --name=VanquishDownloader --add-data="icon.ico;." --add-data="ffmpeg;ffmpeg" --collect-all customtkinter --collect-all yt_dlp_ejs main.py
+pip install -r requirements.txt pyinstaller
+pyinstaller --onefile --windowed --name VanquishDownloader --icon icon.ico --add-data "icon.ico;." --add-binary "deno.exe;." --add-binary "ffmpeg/ffmpeg.exe;ffmpeg" --add-binary "ffmpeg/ffprobe.exe;ffmpeg" --collect-all customtkinter --collect-all yt_dlp_ejs main.py
 ```
 
-Put `ffmpeg.exe` in an `ffmpeg` folder before building. To ship Deno with it, add `--add-binary="deno.exe;."`.
-On macOS/Linux use `:` instead of `;` in `--add-data` and `--add-binary`. The result is in `dist/`.
+The exe ends up in `dist/`. On macOS/Linux use `:` instead of `;` and drop the `.exe` extensions.
 
 ---
 
